@@ -3,7 +3,7 @@ Serializers for the Product and ProductImage models, including nested and relate
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Product, ProductImage, Category, Brand
+from .models import Product, ProductImage, Category, Brand, Size, Color
 from review.models import Review
 
 
@@ -51,6 +51,22 @@ class ReviewTobeIncludedInProductSerializer(serializers.ModelSerializer):
         ]
 
 
+class SizeSerializer(serializers.ModelSerializer):
+    """Serializer for Size model."""
+    class Meta:
+        model = Size
+        fields = ['id', 'name', 'code', 'order', 'is_active']
+        read_only_fields = ['id']
+
+
+class ColorSerializer(serializers.ModelSerializer):
+    """Serializer for Color model."""
+    class Meta:
+        model = Color
+        fields = ['id', 'name', 'hex_code', 'is_active']
+        read_only_fields = ['id']
+
+
 class ProductImageSerializer(serializers.ModelSerializer):
     """Serializer for product images."""
     class Meta:
@@ -60,8 +76,24 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    """Serializer for Product with images and reviews."""
+    """Serializer for Product with images, sizes, colors, and reviews."""
     images = ProductImageSerializer(many=True, read_only=True)
+    sizes = SizeSerializer(many=True, read_only=True)
+    colors = ColorSerializer(many=True, read_only=True)
+    size_ids = serializers.PrimaryKeyRelatedField(
+        many=True, 
+        queryset=Size.objects.all(), 
+        source='sizes', 
+        write_only=True,
+        required=False
+    )
+    color_ids = serializers.PrimaryKeyRelatedField(
+        many=True, 
+        queryset=Color.objects.all(), 
+        source='colors', 
+        write_only=True,
+        required=False
+    )
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all())
     reviews = ReviewTobeIncludedInProductSerializer(many=True, read_only=True)
@@ -73,7 +105,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'category', 'category_name', 'brand', 'brand_name', 
             'description', 'sku', 'old_price', 'price', 'stock', 'is_active', 
-            'created_at', 'updated_at', 'images', 'reviews'
+            'created_at', 'updated_at', 'images', 'sizes', 'colors', 
+            'size_ids', 'color_ids', 'reviews'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

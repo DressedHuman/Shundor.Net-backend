@@ -3,6 +3,40 @@ from category.models import Category
 from brand.models import Brand
 from django.core.validators import MinValueValidator
 
+
+class Size(models.Model):
+    """
+    Model to store product sizes (e.g., S, M, L, XL, XXL).
+    """
+    name = models.CharField(max_length=50, unique=True, db_index=True)
+    code = models.CharField(max_length=10, unique=True, db_index=True)  # e.g., 'S', 'M', 'L'
+    order = models.PositiveIntegerField(default=0, db_index=True)  # For display ordering
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.name
+
+
+class Color(models.Model):
+    """
+    Model to store product colors.
+    """
+    name = models.CharField(max_length=50, unique=True, db_index=True)
+    hex_code = models.CharField(max_length=7, blank=True, null=True)  # e.g., '#FF5733'
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     """
     Main product model representing a sellable item.
@@ -16,6 +50,8 @@ class Product(models.Model):
     old_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, db_index=True)
     stock = models.PositiveIntegerField(validators=[MinValueValidator(0)], default=0)
+    sizes = models.ManyToManyField(Size, blank=True, related_name='products')
+    colors = models.ManyToManyField(Color, blank=True, related_name='products')
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)

@@ -1,14 +1,14 @@
 
 """
-Views for managing products and product images, including creation, update, and retrieval endpoints.
+Views for managing products, product images, sizes, and colors.
 """
 
 
 
 
 from rest_framework import generics, permissions
-from .models import Product, ProductImage
-from .serializers import ProductSerializer, ProductImageSerializer
+from .models import Product, ProductImage, Size, Color
+from .serializers import ProductSerializer, ProductImageSerializer, SizeSerializer, ColorSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
@@ -20,11 +20,12 @@ import json
 
 
 
+
 class ProductListView(generics.ListCreateAPIView):
     """
     List all products (public) or create a new product (admin only).
     """
-    queryset = Product.objects.all().prefetch_related("images")
+    queryset = Product.objects.all().prefetch_related("images", "sizes", "colors")
     serializer_class = ProductSerializer
     http_method_names = ["get", "post"]
 
@@ -44,7 +45,7 @@ class ProductDetailView(generics.RetrieveAPIView):
 
     # Prefetch related objects to optimize database queries.
     queryset = Product.objects.filter(is_active=True).prefetch_related(
-        "images", "reviews"
+        "images", "sizes", "colors", "reviews"
     )
     serializer_class = ProductSerializer
     lookup_field = "id"
@@ -168,6 +169,7 @@ class ProductImageListView(generics.ListAPIView):
     http_method_names = ["get"]
 
 
+
 # Retrieve single image (GET)
 
 class ProductImageDetailView(generics.RetrieveAPIView):
@@ -190,3 +192,101 @@ class ProductImageUpdateView(generics.UpdateAPIView):
     serializer_class = ProductImageSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["put", "patch"]
+
+
+# ------------------- SIZE VIEWS -------------------
+
+
+class SizeListCreateView(generics.ListCreateAPIView):
+    """
+    List all sizes (public) or create a new size (admin only).
+    """
+    queryset = Size.objects.filter(is_active=True)
+    serializer_class = SizeSerializer
+    http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [permissions.AllowAny()]
+        elif self.request.method == "POST":
+            return [permissions.IsAdminUser()]
+        return super().get_permissions()
+
+
+class SizeDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve a single size by its ID (public).
+    """
+    queryset = Size.objects.all()
+    serializer_class = SizeSerializer
+    permission_classes = [permissions.AllowAny]
+    http_method_names = ["get"]
+
+
+class SizeUpdateView(generics.UpdateAPIView):
+    """
+    Update an existing size (admin only).
+    """
+    queryset = Size.objects.all()
+    serializer_class = SizeSerializer
+    permission_classes = [permissions.IsAdminUser]
+    http_method_names = ["put", "patch"]
+
+
+class SizeDeleteView(generics.DestroyAPIView):
+    """
+    Delete a size (admin only).
+    """
+    queryset = Size.objects.all()
+    serializer_class = SizeSerializer
+    permission_classes = [permissions.IsAdminUser]
+    http_method_names = ["delete"]
+
+
+# ------------------- COLOR VIEWS -------------------
+
+
+class ColorListCreateView(generics.ListCreateAPIView):
+    """
+    List all colors (public) or create a new color (admin only).
+    """
+    queryset = Color.objects.filter(is_active=True)
+    serializer_class = ColorSerializer
+    http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [permissions.AllowAny()]
+        elif self.request.method == "POST":
+            return [permissions.IsAdminUser()]
+        return super().get_permissions()
+
+
+class ColorDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve a single color by its ID (public).
+    """
+    queryset = Color.objects.all()
+    serializer_class = ColorSerializer
+    permission_classes = [permissions.AllowAny]
+    http_method_names = ["get"]
+
+
+class ColorUpdateView(generics.UpdateAPIView):
+    """
+    Update an existing color (admin only).
+    """
+    queryset = Color.objects.all()
+    serializer_class = ColorSerializer
+    permission_classes = [permissions.IsAdminUser]
+    http_method_names = ["put", "patch"]
+
+
+class ColorDeleteView(generics.DestroyAPIView):
+    """
+    Delete a color (admin only).
+    """
+    queryset = Color.objects.all()
+    serializer_class = ColorSerializer
+    permission_classes = [permissions.IsAdminUser]
+    http_method_names = ["delete"]
