@@ -1,6 +1,6 @@
 from django.db import models
 from user.models import User
-from product.models import ProductVariant
+from product.models import Product
 from django.core.validators import MinValueValidator
 
 
@@ -17,16 +17,16 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items", null=True, blank=True)
-    product_variant = models.ForeignKey(
-        ProductVariant,
+    product = models.ForeignKey(
+        Product,
         on_delete=models.CASCADE,
         db_index=True,
-        related_name="cart_item",
+        related_name="cart_items",
         null=True,
         blank=True,
     )
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
 
     class Meta:
-        unique_together = ["cart", "product_variant"]
+        unique_together = ["cart", "product"]
 

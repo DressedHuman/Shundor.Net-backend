@@ -29,12 +29,12 @@ class CartItemCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         cart, created = Cart.objects.get_or_create(user=self.request.user)
-        product_variant = serializer.validated_data['product_variant']
+        product = serializer.validated_data['product']
 
         # Check if item already exists in cart
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart,
-            product_variant=product_variant,
+            product=product,
             defaults={'quantity': serializer.validated_data['quantity']}
         )
 
@@ -43,6 +43,7 @@ class CartItemCreateView(generics.CreateAPIView):
             cart_item.save()
 
         serializer.instance = cart_item
+
 
 
 class CartItemUpdateView(generics.UpdateAPIView):

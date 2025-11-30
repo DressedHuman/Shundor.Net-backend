@@ -1,9 +1,9 @@
 """
-Serializers for the Product and ProductVariant models, including nested and related data for API responses.
+Serializers for the Product and ProductImage models, including nested and related data for API responses.
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Product, ProductVariant, Category, Brand
+from .models import Product, ProductImage, Category, Brand
 from review.models import Review
 
 
@@ -51,34 +51,29 @@ class ReviewTobeIncludedInProductSerializer(serializers.ModelSerializer):
         ]
 
 
-class ProductSimpleSerializer(serializers.ModelSerializer):
-    """Basic product info for use inside other serializers."""
-    category = serializers.StringRelatedField()  # Show category name
-    brand = serializers.StringRelatedField()     # Show brand name
-
+class ProductImageSerializer(serializers.ModelSerializer):
+    """Serializer for product images."""
     class Meta:
-        model = Product
-        fields = ["id", "name", "slug", "category", "brand", "description", "is_active"]
-
-
-
-
-class ProductVariantSerializer(serializers.ModelSerializer):
-    product = ProductSimpleSerializer()
-    class Meta:
-        model = ProductVariant
-        fields = "__all__"
+        model = ProductImage
+        fields = ['id', 'image', 'alt_text', 'is_primary', 'order']
         read_only_fields = ['id']
 
+
 class ProductSerializer(serializers.ModelSerializer):
-    variants = ProductVariantSerializer(many=True, read_only=True)
+    """Serializer for Product with images and reviews."""
+    images = ProductImageSerializer(many=True, read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     brand = serializers.PrimaryKeyRelatedField(queryset=Brand.objects.all())
     reviews = ReviewTobeIncludedInProductSerializer(many=True, read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
 
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'slug', 'category', 'brand', 'description', 'is_active', 'variants', 'reviews'
+            'id', 'name', 'slug', 'category', 'category_name', 'brand', 'brand_name', 
+            'description', 'sku', 'old_price', 'price', 'stock', 'is_active', 
+            'created_at', 'updated_at', 'images', 'reviews'
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+

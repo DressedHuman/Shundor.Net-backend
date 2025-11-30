@@ -1,6 +1,6 @@
 from django.db import models
 from user.models import User
-from product.models import ProductVariant
+from product.models import Product
 from django.core.validators import MinValueValidator
 
 
@@ -41,14 +41,15 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     """
-    Represents a single product variant in an order, including quantity and price.
+    Represents a single product in an order, including quantity and price.
     """
 
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, db_index=True, related_name="items"
     )
-    product_variant = models.ForeignKey(
-        ProductVariant, on_delete=models.CASCADE, db_index=True
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, db_index=True
     )
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     price = models.DecimalField(max_digits=10, decimal_places=2, db_index=True)
+

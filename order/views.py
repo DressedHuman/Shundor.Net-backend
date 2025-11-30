@@ -64,12 +64,12 @@ class OrderDetailAPIView(APIView):
         if user.is_staff:
             # Admins can access any order (don't filter by user)
             return get_object_or_404(
-                Order.objects.prefetch_related("items__product_variant"), pk=pk
+                Order.objects.prefetch_related("items__product"), pk=pk
             )
         else:
             # Regular users can only access their own orders
             return get_object_or_404(
-                Order.objects.prefetch_related("items__product_variant"),
+                Order.objects.prefetch_related("items__product"),
                 pk=pk,
                 user=user,
             )
@@ -139,7 +139,7 @@ class OrderItemListCreateAPIView(APIView):
 
     def get(self, request):
         items = OrderItem.objects.filter(order__user=request.user).select_related(
-            "order", "product_variant"
+            "order", "product"
         )
         serializer = OrderItemSerializer(items, many=True)
         return Response(serializer.data)
@@ -164,7 +164,7 @@ class OrderItemDetailAPIView(APIView):
 
     def get_object(self, pk, user):
         return get_object_or_404(
-            OrderItem.objects.select_related("order", "product_variant"),
+            OrderItem.objects.select_related("order", "product"),
             pk=pk,
             order__user=user,
         )

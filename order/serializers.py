@@ -27,9 +27,9 @@ class OrderSerializer(serializers.ModelSerializer):
         # Calculate total_amount
         total = 0
         for item_data in items_data:
-            product_variant = item_data["product_variant"]
+            product = item_data["product"]
             quantity = item_data["quantity"]
-            total += product_variant.price * quantity
+            total += product.price * quantity
 
         order = Order.objects.create(user=user, total_amount=total, **validated_data)
 
@@ -37,9 +37,9 @@ class OrderSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             OrderItem.objects.create(
                 order=order,
-                product_variant=item_data["product_variant"],
+                product=item_data["product"],
                 quantity=item_data["quantity"],
-                price=item_data["product_variant"].price,
+                price=item_data["product"].price,
             )
 
         return order
@@ -49,3 +49,4 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = "__all__"
+

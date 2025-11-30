@@ -1,15 +1,15 @@
 from rest_framework import serializers
 from .models import Cart, CartItem
-from product.serializers import ProductVariantSerializer
+from product.serializers import ProductSerializer
 
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    # product_variant is for display, product_variant_id is for input
-    product_variant = ProductVariantSerializer(read_only=True)
-    product_variant_id = serializers.PrimaryKeyRelatedField(
-        queryset=CartItem._meta.get_field('product_variant').related_model.objects.all(),
-        source='product_variant',
+    # product is for display, product_id is for input
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=CartItem._meta.get_field('product').related_model.objects.all(),
+        source='product',
         write_only=True
     )
 
@@ -17,8 +17,8 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = [
             "id",
-            "product_variant",
-            "product_variant_id",
+            "product",
+            "product_id",
             "quantity",
         ]
 

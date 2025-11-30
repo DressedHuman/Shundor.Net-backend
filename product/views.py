@@ -1,14 +1,14 @@
 
 """
-Views for managing products and product variants, including creation, update, and retrieval endpoints.
+Views for managing products and product images, including creation, update, and retrieval endpoints.
 """
 
 
 
 
 from rest_framework import generics, permissions
-from .models import Product, ProductVariant
-from .serializers import ProductSerializer, ProductVariantSerializer
+from .models import Product, ProductImage
+from .serializers import ProductSerializer, ProductImageSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
@@ -24,7 +24,7 @@ class ProductListView(generics.ListCreateAPIView):
     """
     List all products (public) or create a new product (admin only).
     """
-    queryset = Product.objects.all().prefetch_related("variants")
+    queryset = Product.objects.all().prefetch_related("images")
     serializer_class = ProductSerializer
     http_method_names = ["get", "post"]
 
@@ -44,8 +44,8 @@ class ProductDetailView(generics.RetrieveAPIView):
 
     # Prefetch related objects to optimize database queries.
     queryset = Product.objects.filter(is_active=True).prefetch_related(
-        "variants"
-    )  # , 'reviews__user')
+        "images", "reviews"
+    )
     serializer_class = ProductSerializer
     lookup_field = "id"
 
@@ -67,10 +67,10 @@ class ProductCreateView(generics.CreateAPIView):
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 
-def create_product_with_variants(request):
+def create_product_with_images(request):
     """
-    Create a product with its variants in a single request (admin only).
-    Expects multipart form data with product fields and a JSON list of variants.
+    Create a product with its images in a single request (admin only).
+    Expects multipart form data with product fields and image files.
     """
     try:
         # Extract and validate product data
@@ -80,6 +80,10 @@ def create_product_with_variants(request):
             "category": request.data.get("category"),
             "brand": request.data.get("brand"),
             "description": request.data.get("description"),
+            "sku": request.data.get("sku"),
+            "price": request.data.get("price"),
+            "old_price": request.data.get("old_price"),
+            "stock": request.data.get("stock", 0),
             "is_active": request.data.get("is_active", "true").lower() == "true",
         }
 
@@ -88,52 +92,48 @@ def create_product_with_variants(request):
         product_serializer.is_valid(raise_exception=True)
         product = product_serializer.save()
 
-        # Process variants
-        variants_json = request.data.get("variants")
-        if variants_json:
+        # Process images
+        images_json = request.data.get("images")
+        if images_json:
             try:
-                variants_list = json.loads(variants_json)
+                images_list = json.loads(images_json)
 
-                for idx, variant_data in enumerate(variants_list):
-                    # Get the image file for this variant index
-                    image_file = request.FILES.get(f"variant_image_{idx}")
-
-                    # Create variant directly using the model instead of serializer
-                    # to avoid the product_id field validation issue
-                    ProductVariant.objects.create(
-                        product=product,  # Pass the product instance, not ID
-                        sku=variant_data.get("sku"),
-                        price=variant_data.get("price"),
-                        old_price=variant_data.get("old_price"),
-                        stock=variant_data.get("stock"),
-                        color=variant_data.get("color"),
-                        size=variant_data.get("size"),
-                        is_active=variant_data.get("is_active", True),
-                        image=image_file,
-                    )
+                for idx, image_data in enumerate(images_list):
+                    # Get the image file for this image index
+                    image_file = request.FILES.get(f"image_{idx}")
+                    
+                    if image_file:
+                        # Create product image
+                        ProductImage.objects.create(
+                            product=product,
+                            image=image_file,
+                            alt_text=image_data.get("alt_text", ""),
+                            is_primary=image_data.get("is_primary", idx == 0),
+                            order=image_data.get("order", idx),
+                        )
 
             except json.JSONDecodeError:
                 return Response(
-                    {"error": "Invalid JSON format in variants field"},
+                    {"error": "Invalid JSON format in images field"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             except KeyError as e:
                 return Response(
-                    {"error": f"Missing required field in variant: {str(e)}"},
+                    {"error": f"Missing required field in image: {str(e)}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # Return the complete product with variants
-        product_with_variants = Product.objects.prefetch_related("variants").get(
+        # Return the complete product with images
+        product_with_images = Product.objects.prefetch_related("images").get(
             id=product.id
         )
         return Response(
-            ProductSerializer(product_with_variants).data,
+            ProductSerializer(product_with_images).data,
             status=status.HTTP_201_CREATED,
         )
 
     except Exception as e:
-        # Clean up if product was created but variants failed
+        # Clean up if product was created but images failed
         if "product" in locals():
             product.delete()
 
@@ -153,40 +153,40 @@ class ProductUpdateView(generics.UpdateAPIView):
     http_method_names = ["put", "patch"]
 
 
-# ------------------- PRODUCT VARIANT VIEWS -------------------
+# ------------------- PRODUCT IMAGE VIEWS -------------------
 
 
-# List all product variants (GET)
+# List all product images (GET)
 
-class ProductVariantListView(generics.ListAPIView):
+class ProductImageListView(generics.ListAPIView):
     """
-    List all product variants (public).
+    List all product images (public).
     """
-    queryset = ProductVariant.objects.all().select_related("product")
-    serializer_class = ProductVariantSerializer
+    queryset = ProductImage.objects.all().select_related("product")
+    serializer_class = ProductImageSerializer
     permission_classes = [permissions.AllowAny]
     http_method_names = ["get"]
 
 
-# Retrieve single variant (GET)
+# Retrieve single image (GET)
 
-class ProductVariantDetailView(generics.RetrieveAPIView):
+class ProductImageDetailView(generics.RetrieveAPIView):
     """
-    Retrieve a single product variant by its ID (public).
+    Retrieve a single product image by its ID (public).
     """
-    queryset = ProductVariant.objects.all().select_related("product")
-    serializer_class = ProductVariantSerializer
+    queryset = ProductImage.objects.all().select_related("product")
+    serializer_class = ProductImageSerializer
     permission_classes = [permissions.AllowAny]
     http_method_names = ["get"]
 
 
-# Update variant (PUT/PATCH)
+# Update image (PUT/PATCH)
 
-class ProductVariantUpdateView(generics.UpdateAPIView):
+class ProductImageUpdateView(generics.UpdateAPIView):
     """
-    Update an existing product variant (authenticated users only).
+    Update an existing product image (authenticated users only).
     """
-    queryset = ProductVariant.objects.all().select_related("product")
-    serializer_class = ProductVariantSerializer
+    queryset = ProductImage.objects.all().select_related("product")
+    serializer_class = ProductImageSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["put", "patch"]
