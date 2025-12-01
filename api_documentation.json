@@ -7,27 +7,44 @@
         "repository": "https://github.com/DressedHuman/Shundor.Net-backend"
     },
     "authentication": {
-        "type": "Token-based & JWT",
-        "description": "Uses Djoser for authentication with both Token and JWT support",
+        "type": "JWT (Primary) & Token-based",
+        "description": "Uses Djoser for authentication with phone number as primary identifier. JWT is the default authentication method with 7-day access tokens.",
+        "login_field": "phone_number",
+        "phone_format": "E.164 format (e.g., +8801712345678) for Bangladesh region",
+        "token_lifetimes": {
+            "access_token": "7 days",
+            "refresh_token": "30 days"
+        },
         "endpoints": {
             "register": {
                 "path": "/auth/users/",
                 "method": "POST",
-                "description": "Register a new user",
+                "description": "Register a new user with phone number",
                 "authentication": "None",
                 "request_body": {
-                    "email": "string (required)",
+                    "phone_number": "string (required, E.164 format: +8801712345678)",
+                    "email": "string (optional but unique)",
                     "password": "string (required)",
-                    "re_password": "string (required)"
+                    "profile": {
+                        "first_name": "string (optional)",
+                        "last_name": "string (optional)"
+                    }
+                },
+                "response": {
+                    "id": "integer",
+                    "phone_number": "string",
+                    "email": "string",
+                    "is_verified": "boolean (default: true)",
+                    "profile": "object (UserProfile details)"
                 }
             },
             "login_token": {
                 "path": "/auth/token/login/",
                 "method": "POST",
-                "description": "Login with email and password to get auth token",
+                "description": "Login with phone number and password to get auth token (available but not default)",
                 "authentication": "None",
                 "request_body": {
-                    "email": "string",
+                    "phone_number": "string (+8801712345678)",
                     "password": "string"
                 },
                 "response": {
@@ -38,36 +55,117 @@
                 "path": "/auth/token/logout/",
                 "method": "POST",
                 "description": "Logout and invalidate token",
-                "authentication": "Token"
+                "authentication": "Token",
+                "headers": {
+                    "Authorization": "Token <auth_token>"
+                }
             },
             "jwt_create": {
                 "path": "/auth/jwt/create/",
                 "method": "POST",
-                "description": "Get JWT access and refresh tokens",
+                "description": "Get JWT access and refresh tokens (PRIMARY LOGIN METHOD)",
                 "authentication": "None",
                 "request_body": {
-                    "email": "string",
+                    "phone_number": "string (+8801712345678)",
                     "password": "string"
                 },
                 "response": {
-                    "access": "string",
-                    "refresh": "string"
+                    "access": "string (JWT access token, valid for 7 days)",
+                    "refresh": "string (JWT refresh token, valid for 30 days)"
                 }
             },
             "jwt_refresh": {
                 "path": "/auth/jwt/refresh/",
                 "method": "POST",
-                "description": "Refresh JWT access token",
+                "description": "Refresh JWT access token using refresh token",
                 "authentication": "None",
                 "request_body": {
-                    "refresh": "string"
+                    "refresh": "string (refresh token)"
+                },
+                "response": {
+                    "access": "string (new JWT access token)"
+                }
+            },
+            "jwt_verify": {
+                "path": "/auth/jwt/verify/",
+                "method": "POST",
+                "description": "Verify if a JWT token is valid",
+                "authentication": "None",
+                "request_body": {
+                    "token": "string (JWT token to verify)"
                 }
             },
             "current_user": {
                 "path": "/auth/users/me/",
                 "method": "GET",
-                "description": "Get current authenticated user details",
-                "authentication": "Token or JWT"
+                "description": "Get current authenticated user details with profile",
+                "authentication": "JWT or Token",
+                "headers": {
+                    "Authorization": "Bearer <access_token> OR Token <auth_token>"
+                },
+                "response": {
+                    "id": "integer",
+                    "phone_number": "string",
+                    "email": "string",
+                    "is_verified": "boolean",
+                    "is_active": "boolean",
+                    "is_staff": "boolean",
+                    "date_joined": "datetime",
+                    "profile": {
+                        "id": "integer",
+                        "user_type": "string (customer/supplier/reseller/admin)",
+                        "first_name": "string",
+                        "last_name": "string",
+                        "phone_number": "string",
+                        "email": "string",
+                        "is_verified": "boolean",
+                        "date_of_birth": "date",
+                        "gender": "string (M/F/O)",
+                        "profile_image": "string (URL)",
+                        "default_shipping_address": "string",
+                        "default_billing_address": "string",
+                        "modified_at": "datetime"
+                    }
+                }
+            },
+            "update_user": {
+                "path": "/auth/users/me/",
+                "method": "PUT/PATCH",
+                "description": "Update current user information",
+                "authentication": "JWT or Token",
+                "request_body": {
+                    "email": "string (optional)"
+                }
+            },
+            "set_password": {
+                "path": "/auth/users/set_password/",
+                "method": "POST",
+                "description": "Change password for authenticated user",
+                "authentication": "JWT or Token",
+                "request_body": {
+                    "new_password": "string (required)",
+                    "current_password": "string (required)"
+                }
+            },
+            "reset_password": {
+                "path": "/auth/users/reset_password/",
+                "method": "POST",
+                "description": "Request password reset (sends email)",
+                "authentication": "None",
+                "request_body": {
+                    "phone_number": "string (+8801712345678)"
+                }
+            },
+            "reset_password_confirm": {
+                "path": "/auth/users/reset_password_confirm/",
+                "method": "POST",
+                "description": "Confirm password reset with token from email",
+                "authentication": "None",
+                "request_body": {
+                    "uid": "string (from email)",
+                    "token": "string (from email)",
+                    "new_password": "string (required)"
+                }
             }
         }
     },
@@ -80,17 +178,34 @@
                     "path": "/user-profile/",
                     "methods": [
                         "GET",
-                        "PUT",
                         "PATCH"
                     ],
-                    "description": "Get or update user profile",
-                    "authentication": "Required",
+                    "description": "Get or update user profile (authenticated user only)",
+                    "authentication": "Required (JWT or Token)",
                     "permissions": "Authenticated user",
+                    "response_fields": {
+                        "id": "integer",
+                        "user_type": "string (customer/supplier/reseller/admin)",
+                        "first_name": "string",
+                        "last_name": "string",
+                        "phone_number": "string (from user)",
+                        "email": "string (from user)",
+                        "is_verified": "boolean (from user)",
+                        "date_of_birth": "date",
+                        "gender": "string (M/F/O)",
+                        "profile_image": "string (URL)",
+                        "default_shipping_address": "text",
+                        "default_billing_address": "text",
+                        "modified_at": "datetime"
+                    },
                     "request_body": {
                         "first_name": "string",
                         "last_name": "string",
-                        "phone": "string",
-                        "address": "string"
+                        "date_of_birth": "date (YYYY-MM-DD)",
+                        "gender": "string (M/F/O)",
+                        "profile_image": "file",
+                        "default_shipping_address": "string",
+                        "default_billing_address": "string"
                     }
                 }
             }

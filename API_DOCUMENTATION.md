@@ -11,7 +11,13 @@ E-commerce backend API built with Django REST Framework featuring product manage
 ## Quick Start
 
 ### Authentication
-The API uses **Token-based** and **JWT** authentication via Djoser.
+The API uses **JWT (primary)** and **Token-based** authentication via Djoser with **phone number** as the login identifier.
+
+**Important**: 
+- Login field is `phone_number` (not email)
+- Phone format: E.164 (e.g., `+8801712345678` for Bangladesh)
+- JWT access tokens are valid for **7 days**
+- JWT refresh tokens are valid for **30 days**
 
 #### Register
 ```http
@@ -19,51 +25,119 @@ POST /auth/users/
 Content-Type: application/json
 
 {
+  "phone_number": "+8801712345678",
   "email": "user@example.com",
   "password": "securepassword",
-  "re_password": "securepassword"
-}
-```
-
-#### Login (Token)
-```http
-POST /auth/token/login/
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securepassword"
+  "profile": {
+    "first_name": "John",
+    "last_name": "Doe"
+  }
 }
 
 Response:
 {
-  "auth_token": "your-token-here"
+  "id": 1,
+  "phone_number": "+8801712345678",
+  "email": "user@example.com",
+  "is_verified": true,
+  "profile": {
+    "id": 1,
+    "user_type": "customer",
+    "first_name": "John",
+    "last_name": "Doe",
+    ...
+  }
 }
 ```
 
-#### Login (JWT)
+#### Login (JWT - PRIMARY METHOD)
 ```http
 POST /auth/jwt/create/
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
+  "phone_number": "+8801712345678",
   "password": "securepassword"
 }
 
 Response:
 {
-  "access": "your-access-token",
-  "refresh": "your-refresh-token"
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+```
+
+#### Refresh JWT Token
+```http
+POST /auth/jwt/refresh/
+Content-Type: application/json
+
+{
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+
+Response:
+{
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+```
+
+#### Login (Token - Alternative)
+```http
+POST /auth/token/login/
+Content-Type: application/json
+
+{
+  "phone_number": "+8801712345678",
+  "password": "securepassword"
+}
+
+Response:
+{
+  "auth_token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+}
+```
+
+#### Get Current User
+```http
+GET /auth/users/me/
+Authorization: Bearer <jwt-access-token>
+
+Response:
+{
+  "id": 1,
+  "phone_number": "+8801712345678",
+  "email": "user@example.com",
+  "is_verified": true,
+  "is_active": true,
+  "is_staff": false,
+  "date_joined": "2025-12-01T10:00:00Z",
+  "profile": {
+    "id": 1,
+    "user_type": "customer",
+    "first_name": "John",
+    "last_name": "Doe",
+    "phone_number": "+8801712345678",
+    "email": "user@example.com",
+    "is_verified": true,
+    "date_of_birth": null,
+    "gender": null,
+    "profile_image": null,
+    "default_shipping_address": null,
+    "default_billing_address": null,
+    "modified_at": "2025-12-01T10:00:00Z"
+  }
 }
 ```
 
 #### Use Authentication
 Include in headers:
 ```
-Authorization: Token <your-token>
-# OR
+# JWT (Primary)
 Authorization: Bearer <your-jwt-access-token>
+
+# OR Token (Alternative)
+Authorization: Token <your-auth-token>
 ```
 
 ---
@@ -661,19 +735,46 @@ Default superuser credentials (development):
 curl http://localhost:8000/products/
 ```
 
-#### Login
+#### Register
+```bash
+curl -X POST http://localhost:8000/auth/users/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number":"+8801712345678",
+    "email":"user@example.com",
+    "password":"password"
+  }'
+```
+
+#### Login (JWT)
+```bash
+curl -X POST http://localhost:8000/auth/jwt/create/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number":"+8801712345678",
+    "password":"password"
+  }'
+```
+
+#### Login (Token)
 ```bash
 curl -X POST http://localhost:8000/auth/token/login/ \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password"}'
+  -d '{
+    "phone_number":"+8801712345678",
+    "password":"password"
+  }'
 ```
 
 #### Add to Cart
 ```bash
 curl -X POST http://localhost:8000/items/ \
   -H "Content-Type: application/json" \
-  -H "Authorization: Token your-token-here" \
-  -d '{"product_id":1,"quantity":2}'
+  -H "Authorization: Bearer your-jwt-token-here" \
+  -d '{
+    "product_id":1,
+    "quantity":2
+  }'
 ```
 
 ### JavaScript/Fetch Examples
@@ -685,7 +786,43 @@ fetch('http://localhost:8000/products/')
   .then(data => console.log(data));
 ```
 
-#### Login
+#### Register
+```javascript
+fetch('http://localhost:8000/auth/users/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    phone_number: '+8801712345678',
+    email: 'user@example.com',
+    password: 'password'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+#### Login (JWT)
+```javascript
+fetch('http://localhost:8000/auth/jwt/create/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    phone_number: '+8801712345678',
+    password: 'password'
+  })
+})
+.then(response => response.json())
+.then(data => {
+  localStorage.setItem('access_token', data.access);
+  localStorage.setItem('refresh_token', data.refresh);
+});
+```
+
+#### Login (Token)
 ```javascript
 fetch('http://localhost:8000/auth/token/login/', {
   method: 'POST',
@@ -693,7 +830,7 @@ fetch('http://localhost:8000/auth/token/login/', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    email: 'user@example.com',
+    phone_number: '+8801712345678',
     password: 'password'
   })
 })
@@ -703,7 +840,26 @@ fetch('http://localhost:8000/auth/token/login/', {
 });
 ```
 
-#### Add to Cart (Authenticated)
+#### Add to Cart (Authenticated with JWT)
+```javascript
+const accessToken = localStorage.getItem('access_token');
+
+fetch('http://localhost:8000/items/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`
+  },
+  body: JSON.stringify({
+    product_id: 1,
+    quantity: 2
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+#### Add to Cart (Authenticated with Token)
 ```javascript
 const token = localStorage.getItem('token');
 
