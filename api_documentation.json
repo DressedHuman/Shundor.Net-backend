@@ -1,0 +1,1094 @@
+{
+    "project": {
+        "name": "Shundor.Net Backend API",
+        "description": "E-commerce backend API with product management, cart, orders, reviews, and user authentication",
+        "version": "1.0.0",
+        "base_url": "http://localhost:8000",
+        "repository": "https://github.com/DressedHuman/Shundor.Net-backend"
+    },
+    "authentication": {
+        "type": "Token-based & JWT",
+        "description": "Uses Djoser for authentication with both Token and JWT support",
+        "endpoints": {
+            "register": {
+                "path": "/auth/users/",
+                "method": "POST",
+                "description": "Register a new user",
+                "authentication": "None",
+                "request_body": {
+                    "email": "string (required)",
+                    "password": "string (required)",
+                    "re_password": "string (required)"
+                }
+            },
+            "login_token": {
+                "path": "/auth/token/login/",
+                "method": "POST",
+                "description": "Login with email and password to get auth token",
+                "authentication": "None",
+                "request_body": {
+                    "email": "string",
+                    "password": "string"
+                },
+                "response": {
+                    "auth_token": "string"
+                }
+            },
+            "logout_token": {
+                "path": "/auth/token/logout/",
+                "method": "POST",
+                "description": "Logout and invalidate token",
+                "authentication": "Token"
+            },
+            "jwt_create": {
+                "path": "/auth/jwt/create/",
+                "method": "POST",
+                "description": "Get JWT access and refresh tokens",
+                "authentication": "None",
+                "request_body": {
+                    "email": "string",
+                    "password": "string"
+                },
+                "response": {
+                    "access": "string",
+                    "refresh": "string"
+                }
+            },
+            "jwt_refresh": {
+                "path": "/auth/jwt/refresh/",
+                "method": "POST",
+                "description": "Refresh JWT access token",
+                "authentication": "None",
+                "request_body": {
+                    "refresh": "string"
+                }
+            },
+            "current_user": {
+                "path": "/auth/users/me/",
+                "method": "GET",
+                "description": "Get current authenticated user details",
+                "authentication": "Token or JWT"
+            }
+        }
+    },
+    "endpoints": {
+        "user": {
+            "base_path": "/",
+            "description": "User profile management",
+            "endpoints": {
+                "user_profile": {
+                    "path": "/user-profile/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Get or update user profile",
+                    "authentication": "Required",
+                    "permissions": "Authenticated user",
+                    "request_body": {
+                        "first_name": "string",
+                        "last_name": "string",
+                        "phone": "string",
+                        "address": "string"
+                    }
+                }
+            }
+        },
+        "product": {
+            "base_path": "/",
+            "description": "Product, Size, Color, and Image management",
+            "endpoints": {
+                "product_list": {
+                    "path": "/products/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all products or create new product (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST",
+                    "query_params": {
+                        "page": "integer (pagination)",
+                        "page_size": "integer (pagination)"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "name": "string",
+                        "slug": "string",
+                        "category": "integer (ID)",
+                        "category_name": "string",
+                        "brand": "integer (ID)",
+                        "brand_name": "string",
+                        "description": "string",
+                        "sku": "string",
+                        "old_price": "decimal",
+                        "price": "decimal",
+                        "stock": "integer",
+                        "is_active": "boolean",
+                        "created_at": "datetime",
+                        "updated_at": "datetime",
+                        "images": "array of ProductImage objects",
+                        "sizes": "array of Size objects",
+                        "colors": "array of Color objects",
+                        "reviews": "array of Review objects"
+                    }
+                },
+                "product_create": {
+                    "path": "/products/create/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Create product with multiple images",
+                    "authentication": "Admin",
+                    "content_type": "multipart/form-data",
+                    "request_body": {
+                        "name": "string (required)",
+                        "slug": "string (required)",
+                        "category": "integer (required)",
+                        "brand": "integer (required)",
+                        "description": "string",
+                        "sku": "string (required)",
+                        "price": "decimal (required)",
+                        "old_price": "decimal",
+                        "stock": "integer",
+                        "is_active": "boolean",
+                        "size_ids": "array of integers",
+                        "color_ids": "array of integers",
+                        "images": "JSON string array",
+                        "image_0": "file",
+                        "image_1": "file"
+                    }
+                },
+                "product_detail": {
+                    "path": "/products/<id>/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get product details by ID",
+                    "authentication": "None",
+                    "url_params": {
+                        "id": "integer (product ID)"
+                    }
+                },
+                "product_update": {
+                    "path": "/products/<id>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update product",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "integer (product ID)"
+                    }
+                },
+                "image_list": {
+                    "path": "/products/images/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "List all product images",
+                    "authentication": "None"
+                },
+                "image_detail": {
+                    "path": "/images/<pk>/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get image details",
+                    "authentication": "None",
+                    "url_params": {
+                        "pk": "integer (image ID)"
+                    }
+                },
+                "image_update": {
+                    "path": "/images/<pk>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update product image",
+                    "authentication": "Authenticated",
+                    "url_params": {
+                        "pk": "integer (image ID)"
+                    }
+                },
+                "size_list_create": {
+                    "path": "/sizes/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all sizes or create new size (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST",
+                    "request_body": {
+                        "name": "string (required)",
+                        "code": "string (required)",
+                        "order": "integer",
+                        "is_active": "boolean"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "name": "string",
+                        "code": "string",
+                        "order": "integer",
+                        "is_active": "boolean"
+                    }
+                },
+                "size_detail": {
+                    "path": "/sizes/<pk>/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get size details",
+                    "authentication": "None",
+                    "url_params": {
+                        "pk": "integer (size ID)"
+                    }
+                },
+                "size_update": {
+                    "path": "/sizes/<pk>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update size",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (size ID)"
+                    }
+                },
+                "size_delete": {
+                    "path": "/sizes/<pk>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete size",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (size ID)"
+                    }
+                },
+                "color_list_create": {
+                    "path": "/colors/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all colors or create new color (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST",
+                    "request_body": {
+                        "name": "string (required)",
+                        "hex_code": "string (e.g., #FF0000)",
+                        "is_active": "boolean"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "name": "string",
+                        "hex_code": "string",
+                        "is_active": "boolean"
+                    }
+                },
+                "color_detail": {
+                    "path": "/colors/<pk>/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get color details",
+                    "authentication": "None",
+                    "url_params": {
+                        "pk": "integer (color ID)"
+                    }
+                },
+                "color_update": {
+                    "path": "/colors/<pk>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update color",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (color ID)"
+                    }
+                },
+                "color_delete": {
+                    "path": "/colors/<pk>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete color",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (color ID)"
+                    }
+                }
+            }
+        },
+        "cart": {
+            "base_path": "/",
+            "description": "Shopping cart management",
+            "endpoints": {
+                "cart_detail": {
+                    "path": "/cart/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get current user's cart with all items",
+                    "authentication": "Required",
+                    "response_fields": {
+                        "id": "integer",
+                        "user": "integer",
+                        "created_at": "datetime",
+                        "items": "array of CartItem objects"
+                    }
+                },
+                "cartitem_create": {
+                    "path": "/items/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Add item to cart (or update quantity if exists)",
+                    "authentication": "Required",
+                    "request_body": {
+                        "product_id": "integer (required)",
+                        "quantity": "integer (required)"
+                    }
+                },
+                "cartitem_update": {
+                    "path": "/items/<id>/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update cart item quantity",
+                    "authentication": "Required",
+                    "url_params": {
+                        "id": "string (cart item ID)"
+                    },
+                    "request_body": {
+                        "quantity": "integer"
+                    }
+                },
+                "cartitem_delete": {
+                    "path": "/items/<id>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Remove item from cart",
+                    "authentication": "Required",
+                    "url_params": {
+                        "id": "string (cart item ID)"
+                    }
+                }
+            }
+        },
+        "order": {
+            "base_path": "/",
+            "description": "Order management",
+            "endpoints": {
+                "order_list_create": {
+                    "path": "/orders/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all orders (admin) or create new order",
+                    "authentication": "Required for POST, Admin for GET",
+                    "request_body": {
+                        "shipping_address": "string (required)",
+                        "customer_name": "string (for guest checkout)",
+                        "customer_phone": "string (for guest checkout)",
+                        "items": "array of order items"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "user": "integer",
+                        "status": "string (pending/processing/shipped/delivered/cancelled)",
+                        "total_amount": "decimal",
+                        "shipping_address": "string",
+                        "customer_name": "string",
+                        "customer_phone": "string",
+                        "created_at": "datetime",
+                        "updated_at": "datetime",
+                        "items": "array of OrderItem objects"
+                    }
+                },
+                "order_detail": {
+                    "path": "/orders/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete order (users can only access their own orders)",
+                    "authentication": "Required",
+                    "url_params": {
+                        "pk": "integer (order ID)"
+                    }
+                },
+                "order_status_update": {
+                    "path": "/orders/<pk>/update-status/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Update order status (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (order ID)"
+                    },
+                    "request_body": {
+                        "status": "string (pending/processing/shipped/delivered/cancelled)"
+                    }
+                },
+                "order_history": {
+                    "path": "/order-history/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get current user's order history",
+                    "authentication": "Required"
+                },
+                "orderitem_list_create": {
+                    "path": "/order-items/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List or create order items (admin only)",
+                    "authentication": "Admin"
+                },
+                "orderitem_detail": {
+                    "path": "/order-items/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete order item (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (order item ID)"
+                    }
+                }
+            }
+        },
+        "brand": {
+            "base_path": "/",
+            "description": "Brand management",
+            "endpoints": {
+                "brand_list": {
+                    "path": "/brands/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "List all brands",
+                    "authentication": "None",
+                    "response_fields": {
+                        "id": "integer",
+                        "name": "string",
+                        "logo": "string (image URL)",
+                        "is_active": "boolean"
+                    }
+                },
+                "brand_create": {
+                    "path": "/brands/create/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Create new brand (admin only)",
+                    "authentication": "Admin",
+                    "request_body": {
+                        "name": "string (required)",
+                        "logo": "file",
+                        "is_active": "boolean"
+                    }
+                },
+                "brand_update": {
+                    "path": "/brands/<id>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update brand (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "string (brand ID)"
+                    }
+                },
+                "brand_delete": {
+                    "path": "/brands/<id>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete brand (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "string (brand ID)"
+                    }
+                }
+            }
+        },
+        "category": {
+            "base_path": "/",
+            "description": "Category management",
+            "endpoints": {
+                "category_list": {
+                    "path": "/categories/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "List all categories",
+                    "authentication": "None",
+                    "response_fields": {
+                        "id": "integer",
+                        "name": "string",
+                        "image": "string (image URL)",
+                        "is_active": "boolean"
+                    }
+                },
+                "category_create": {
+                    "path": "/categories/create/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Create new category (admin only)",
+                    "authentication": "Admin",
+                    "request_body": {
+                        "name": "string (required)",
+                        "image": "file",
+                        "is_active": "boolean"
+                    }
+                },
+                "category_update": {
+                    "path": "/categories/<id>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update category (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "string (category ID)"
+                    }
+                },
+                "category_delete": {
+                    "path": "/categories/<id>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete category (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "string (category ID)"
+                    }
+                }
+            }
+        },
+        "review": {
+            "base_path": "/",
+            "description": "Product review management",
+            "endpoints": {
+                "review_list": {
+                    "path": "/reviews/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all reviews or create new review",
+                    "authentication": "None for GET, Required for POST",
+                    "request_body": {
+                        "product": "integer (product ID, required)",
+                        "rating": "integer (1-5, required)",
+                        "comment": "string"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "user": "object (user details)",
+                        "product": "integer",
+                        "rating": "integer",
+                        "comment": "string",
+                        "created_at": "datetime"
+                    }
+                },
+                "review_detail": {
+                    "path": "/reviews/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete review (users can only modify their own reviews)",
+                    "authentication": "Required for PUT/PATCH/DELETE",
+                    "url_params": {
+                        "pk": "integer (review ID)"
+                    }
+                }
+            }
+        },
+        "wishlist": {
+            "base_path": "/",
+            "description": "Wishlist management",
+            "endpoints": {
+                "wishlist_list_create": {
+                    "path": "/wishlist/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List user's wishlist or add product to wishlist",
+                    "authentication": "Required",
+                    "request_body": {
+                        "product": "integer (product ID, required)"
+                    },
+                    "response_fields": {
+                        "id": "string",
+                        "user": "integer",
+                        "product": "object (product details)"
+                    }
+                },
+                "wishlist_detail": {
+                    "path": "/wishlist/<pk>/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Remove product from wishlist",
+                    "authentication": "Required",
+                    "url_params": {
+                        "pk": "string (wishlist item ID)"
+                    }
+                }
+            }
+        },
+        "banner": {
+            "base_path": "/banner/",
+            "description": "Banner management for homepage",
+            "endpoints": {
+                "get_all_banners": {
+                    "path": "/banner/get_all_banners/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get all banners (admin only)",
+                    "authentication": "Admin"
+                },
+                "get_all_active_banners": {
+                    "path": "/banner/get_all_active_banners/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "Get all active/published banners",
+                    "authentication": "None"
+                },
+                "add_banner": {
+                    "path": "/banner/add_banner/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Add new banner (admin only)",
+                    "authentication": "Admin",
+                    "request_body": {
+                        "title": "string",
+                        "image": "file (required)",
+                        "link": "string",
+                        "is_published": "boolean"
+                    }
+                },
+                "update_banner": {
+                    "path": "/banner/update_banner/<pk>/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update banner (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (banner ID)"
+                    }
+                },
+                "update_banner_publish_status": {
+                    "path": "/banner/update_banner_publish_status/<pk>/",
+                    "methods": [
+                        "PATCH"
+                    ],
+                    "description": "Toggle banner publish status (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (banner ID)"
+                    }
+                },
+                "delete_banner": {
+                    "path": "/banner/delete_banner/<pk>/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete banner (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "pk": "integer (banner ID)"
+                    }
+                }
+            }
+        },
+        "contact": {
+            "base_path": "/",
+            "description": "Contact form submissions",
+            "endpoints": {
+                "contact_list": {
+                    "path": "/contacts/",
+                    "methods": [
+                        "GET"
+                    ],
+                    "description": "List all contact submissions (admin only)",
+                    "authentication": "Admin"
+                },
+                "contact_create": {
+                    "path": "/contacts/create/",
+                    "methods": [
+                        "POST"
+                    ],
+                    "description": "Submit contact form",
+                    "authentication": "None",
+                    "request_body": {
+                        "name": "string (required)",
+                        "email": "string (required)",
+                        "subject": "string",
+                        "message": "string (required)"
+                    }
+                },
+                "contact_update": {
+                    "path": "/contacts/<id>/update/",
+                    "methods": [
+                        "PUT",
+                        "PATCH"
+                    ],
+                    "description": "Update contact submission (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "integer (contact ID)"
+                    }
+                },
+                "contact_delete": {
+                    "path": "/contacts/<id>/delete/",
+                    "methods": [
+                        "DELETE"
+                    ],
+                    "description": "Delete contact submission (admin only)",
+                    "authentication": "Admin",
+                    "url_params": {
+                        "id": "integer (contact ID)"
+                    }
+                }
+            }
+        },
+        "shipping_charge": {
+            "base_path": "/",
+            "description": "Shipping charge management",
+            "endpoints": {
+                "shipping_charge_list_create": {
+                    "path": "/shipping-charges/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all shipping charges or create new (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST",
+                    "request_body": {
+                        "region": "string (required)",
+                        "charge": "decimal (required)",
+                        "is_active": "boolean"
+                    },
+                    "response_fields": {
+                        "id": "integer",
+                        "region": "string",
+                        "charge": "decimal",
+                        "is_active": "boolean"
+                    }
+                },
+                "shipping_charge_detail": {
+                    "path": "/shipping-charges/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete shipping charge (admin only for PUT/PATCH/DELETE)",
+                    "authentication": "None for GET, Admin for PUT/PATCH/DELETE",
+                    "url_params": {
+                        "pk": "integer (shipping charge ID)"
+                    }
+                }
+            }
+        },
+        "site_setting": {
+            "base_path": "/",
+            "description": "Site-wide settings management",
+            "endpoints": {
+                "site_setting_list_create": {
+                    "path": "/site-settings/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all site settings or create new (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST",
+                    "request_body": {
+                        "key": "string (required)",
+                        "value": "string (required)",
+                        "description": "string"
+                    }
+                },
+                "site_setting_detail": {
+                    "path": "/site-settings/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete site setting (admin only for PUT/PATCH/DELETE)",
+                    "authentication": "None for GET, Admin for PUT/PATCH/DELETE",
+                    "url_params": {
+                        "pk": "integer (site setting ID)"
+                    }
+                }
+            }
+        },
+        "fraud_api": {
+            "base_path": "/",
+            "description": "Fraud detection API management",
+            "endpoints": {
+                "fraud_api_list_create": {
+                    "path": "/fraud-apis/",
+                    "methods": [
+                        "GET",
+                        "POST"
+                    ],
+                    "description": "List all fraud APIs or create new (admin only for POST)",
+                    "authentication": "None for GET, Admin for POST"
+                },
+                "fraud_api_detail": {
+                    "path": "/fraud-apis/<pk>/",
+                    "methods": [
+                        "GET",
+                        "PUT",
+                        "PATCH",
+                        "DELETE"
+                    ],
+                    "description": "Get, update, or delete fraud API (admin only for PUT/PATCH/DELETE)",
+                    "authentication": "None for GET, Admin for PUT/PATCH/DELETE",
+                    "url_params": {
+                        "pk": "integer (fraud API ID)"
+                    }
+                }
+            }
+        }
+    },
+    "models": {
+        "Product": {
+            "description": "Main product model",
+            "fields": {
+                "id": "AutoField (primary key)",
+                "name": "CharField (max 255)",
+                "slug": "SlugField (unique, max 255)",
+                "category": "ForeignKey to Category",
+                "brand": "ForeignKey to Brand",
+                "description": "TextField",
+                "sku": "CharField (unique, max 100)",
+                "old_price": "DecimalField (nullable)",
+                "price": "DecimalField",
+                "stock": "PositiveIntegerField",
+                "sizes": "ManyToManyField to Size",
+                "colors": "ManyToManyField to Color",
+                "is_active": "BooleanField",
+                "created_at": "DateTimeField (auto)",
+                "updated_at": "DateTimeField (auto)"
+            },
+            "relationships": {
+                "images": "One-to-Many with ProductImage",
+                "reviews": "One-to-Many with Review",
+                "cart_items": "One-to-Many with CartItem",
+                "order_items": "One-to-Many with OrderItem"
+            }
+        },
+        "ProductImage": {
+            "description": "Product images (multiple per product)",
+            "fields": {
+                "id": "AutoField",
+                "product": "ForeignKey to Product",
+                "image": "ImageField",
+                "alt_text": "CharField (max 255, nullable)",
+                "is_primary": "BooleanField",
+                "order": "PositiveIntegerField",
+                "created_at": "DateTimeField (auto)"
+            }
+        },
+        "Size": {
+            "description": "Product size options",
+            "fields": {
+                "id": "AutoField",
+                "name": "CharField (unique, max 50)",
+                "code": "CharField (unique, max 10)",
+                "order": "PositiveIntegerField",
+                "is_active": "BooleanField",
+                "created_at": "DateTimeField (auto)"
+            }
+        },
+        "Color": {
+            "description": "Product color options",
+            "fields": {
+                "id": "AutoField",
+                "name": "CharField (unique, max 50)",
+                "hex_code": "CharField (max 7, nullable)",
+                "is_active": "BooleanField",
+                "created_at": "DateTimeField (auto)"
+            }
+        },
+        "Cart": {
+            "description": "Shopping cart",
+            "fields": {
+                "id": "AutoField",
+                "user": "ForeignKey to User (nullable)",
+                "created_at": "DateTimeField (auto)"
+            },
+            "relationships": {
+                "items": "One-to-Many with CartItem"
+            }
+        },
+        "CartItem": {
+            "description": "Items in shopping cart",
+            "fields": {
+                "id": "AutoField",
+                "cart": "ForeignKey to Cart",
+                "product": "ForeignKey to Product",
+                "quantity": "PositiveIntegerField"
+            },
+            "unique_together": [
+                "cart",
+                "product"
+            ]
+        },
+        "Order": {
+            "description": "Customer orders",
+            "fields": {
+                "id": "AutoField",
+                "user": "ForeignKey to User (nullable)",
+                "status": "CharField (choices: pending/processing/shipped/delivered/cancelled)",
+                "total_amount": "DecimalField",
+                "shipping_address": "TextField",
+                "customer_name": "CharField (nullable)",
+                "customer_phone": "CharField (nullable)",
+                "created_at": "DateTimeField (auto)",
+                "updated_at": "DateTimeField (auto)"
+            },
+            "relationships": {
+                "items": "One-to-Many with OrderItem"
+            }
+        },
+        "OrderItem": {
+            "description": "Items in an order",
+            "fields": {
+                "id": "AutoField",
+                "order": "ForeignKey to Order",
+                "product": "ForeignKey to Product",
+                "quantity": "PositiveIntegerField",
+                "price": "DecimalField"
+            }
+        },
+        "Review": {
+            "description": "Product reviews",
+            "fields": {
+                "id": "AutoField",
+                "user": "ForeignKey to User",
+                "product": "ForeignKey to Product",
+                "rating": "IntegerField (1-5)",
+                "comment": "TextField",
+                "created_at": "DateTimeField (auto)"
+            }
+        },
+        "Wishlist": {
+            "description": "User wishlist items",
+            "fields": {
+                "id": "AutoField",
+                "user": "ForeignKey to User",
+                "product": "ForeignKey to Product"
+            },
+            "unique_together": [
+                "user",
+                "product"
+            ]
+        },
+        "Brand": {
+            "description": "Product brands",
+            "fields": {
+                "id": "AutoField",
+                "name": "CharField",
+                "logo": "ImageField (nullable)",
+                "is_active": "BooleanField"
+            }
+        },
+        "Category": {
+            "description": "Product categories",
+            "fields": {
+                "id": "AutoField",
+                "name": "CharField",
+                "image": "ImageField (nullable)",
+                "is_active": "BooleanField"
+            }
+        }
+    },
+    "common_responses": {
+        "pagination": {
+            "description": "List endpoints use pagination",
+            "structure": {
+                "count": "integer (total items)",
+                "next": "string (next page URL)",
+                "previous": "string (previous page URL)",
+                "results": "array (items)"
+            }
+        },
+        "error_responses": {
+            "400": {
+                "description": "Bad Request - Invalid data",
+                "example": {
+                    "field_name": [
+                        "Error message"
+                    ]
+                }
+            },
+            "401": {
+                "description": "Unauthorized - Authentication required",
+                "example": {
+                    "detail": "Authentication credentials were not provided."
+                }
+            },
+            "403": {
+                "description": "Forbidden - Insufficient permissions",
+                "example": {
+                    "detail": "You do not have permission to perform this action."
+                }
+            },
+            "404": {
+                "description": "Not Found - Resource doesn't exist",
+                "example": {
+                    "detail": "Not found."
+                }
+            }
+        }
+    },
+    "notes": {
+        "authentication_header": "Include 'Authorization: Token <your-token>' or 'Authorization: Bearer <your-jwt>' in request headers",
+        "media_files": "Media files are served from /media/ when DEBUG=True",
+        "admin_panel": "Django admin panel available at /admin/",
+        "pagination": "Default page size is typically 10-20 items, use ?page=<number> to navigate",
+        "filtering": "Some endpoints support filtering via query parameters",
+        "recent_changes": [
+            "Removed ProductVariant model - products now have direct price/stock fields",
+            "Added ProductImage model for multiple images per product",
+            "Added Size and Color models with ManyToMany relationships to Product",
+            "Cart and Order now reference Product directly instead of ProductVariant"
+        ]
+    }
+}
