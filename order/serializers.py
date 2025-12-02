@@ -1,9 +1,17 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
+from product.models import Product
 
 
 # Orders can have multiple items, each with its own details
+class OrderItemCreateSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    quantity = serializers.IntegerField(min_value=1)
+
+
 class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemCreateSerializer(many=True, write_only=True)
+
     class Meta:
         model = Order
         fields = "__all__"
